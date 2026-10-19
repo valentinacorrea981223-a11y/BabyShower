@@ -1,0 +1,32 @@
+# Lista de regalos · Baby Maximiliano
+
+## Archivos
+- `index.html`: página pública adaptable a móvil y escritorio.
+- `coliseo.jpg`: imagen de fondo (debe ir en la misma carpeta que index.html).
+- `bebe.png` y `escudo.png`: imágenes del encabezado (misma carpeta que index.html).
+- `supabase.sql`: estructura de base de datos y funciones seguras para disponibilidad/reservas.
+
+## Importante antes de publicar
+La página HTML incluida contiene una vista de demostración. No guarda reservas compartidas entre dispositivos hasta conectar Supabase. Para evitar exponer nombres, el despliegue final debe usar las funciones RPC `public_gift_list()` y `reserve_gift()` definidas en el SQL. No habilites lectura pública directa de `reservations`.
+
+## Configuración
+1. Crea un proyecto en Supabase.
+2. Abre **SQL Editor**, pega `supabase.sql` y ejecuta el script.
+3. En **Project Settings > API**, copia Project URL y la clave pública `anon`/publishable.
+4. En `index.html`, reemplaza:
+   - `PEGA_AQUI_TU_SUPABASE_URL`
+   - `PEGA_AQUI_TU_SUPABASE_ANON_KEY`
+5. El JavaScript ya usa `rpc/public_gift_list` y `rpc/reserve_gift`. No uses políticas públicas de lectura de la tabla `reservations`.
+6. Publica la carpeta en Vercel o cualquier hosting estático. El dominio final será el enlace que compartirás.
+
+## Panel de administrador (logo ♛ arriba a la derecha)
+- El panel está cerrado: ya no existe el PIN de demostración. Solo abre con correo y contraseña de Supabase Auth, y la cuenta debe estar en la tabla admins. Sin Supabase configurado, el panel no permite entrar.
+- Recomendado: en Supabase > Authentication > Sign In / Providers desactiva "Allow new users to sign up" para que nadie más pueda crear cuentas.
+- Configuración: en Supabase > Authentication > Users crea tu usuario, y en el SQL Editor ejecuta:
+  insert into public.admins(user_id) select id from auth.users where email = 'TU_CORREO';
+  Luego entra con ese correo y contraseña. Desde el panel añades regalos, cambias cantidades, ocultas/eliminas y ves quién reservó (nombre, teléfono, mensaje) o liberas una reserva.
+- Si ya habías ejecutado el SQL anterior, vuelve a ejecutar el nuevo supabase.sql (actualiza reserve_gift).
+- Las reservas ahora piden nombre, teléfono y mensaje en una ventana de pergamino animado.
+
+## Nota
+Este paquete es una base de diseño y configuración, no una publicación en línea. Para obtener un enlace público real se necesita desplegarlo en una cuenta de hosting y conectar la base de datos.
