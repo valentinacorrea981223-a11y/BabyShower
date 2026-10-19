@@ -126,3 +126,8 @@ from (values
  ('Organizador de pañales','Para mantener sus cositas ordenadas.',1)
 ) as v(name,description,quantity)
 where not exists (select 1 from public.gifts);
+
+-- Administradora de este sitio (ejecuta DESPUÉS de crear el usuario en Authentication > Users):
+insert into public.admins(user_id)
+select id from auth.users where email = 'valentinacorrea.981223@gmail.com'
+on conflict do nothing;
