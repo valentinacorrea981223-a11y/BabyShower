@@ -151,9 +151,9 @@ body{background:transparent!important}
   4. El panel de administrador solo abre con un usuario de Supabase Auth que esté en la tabla admins (sin PIN ni modo demo).
   Sin configuración, la página funciona en modo demostración local; las reservas no se comparten entre dispositivos.
 */
-const SUPABASE_URL = "PEGA_AQUI_TU_SUPABASE_URL";
-const SUPABASE_ANON_KEY = "PEGA_AQUI_TU_SUPABASE_ANON_KEY";
-const isConfigured = SUPABASE_URL.startsWith("https://") && !SUPABASE_URL.includes("PEGA_AQUI") && !SUPABASE_ANON_KEY.includes("PEGA_AQUI");
+const SUPABASE_URL = "https://smvqesfvilmfteczxrxm.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdnFlc2Z2aWxtZnRlY3p4cnhtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTIzNzk1MDksImV4cCI6MjEwNzk1NTUwOX0.E0533HvlEyuEav4TDcL9LrNfYPSwBrgFtpx2HktTaYM";
+const isConfigured = SUPABASE_URL.startsWith("https://") && !SUPABASE_URL.includes("https://smvqesfvilmfteczxrxm.supabase.co") && !SUPABASE_ANON_KEY.includes("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdnFlc2Z2aWxtZnRlY3p4cnhtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTIzNzk1MDksImV4cCI6MjEwNzk1NTUwOX0.E0533HvlEyuEav4TDcL9LrNfYPSwBrgFtpx2HktTaYM");
 const grid = document.getElementById("giftGrid"), notice = document.getElementById("connectionNotice");
 const dialog = document.getElementById("reserveDialog"), form = document.getElementById("reserveForm");
 let selectedGift = null, gifts = [], supabaseClient = null;
@@ -194,7 +194,7 @@ const A={
 };
 const box=document.getElementById("adminBox"),adm=document.getElementById("adminDialog");let tab="gifts";
 function adminLogin(msg=""){
- box.innerHTML=`<h2>Acceso del administrador</h2><div class="orn">✧ ✦ ✧</div><form id="lf">${isConfigured?'<label>Correo</label><input id="le" type="email" required autocomplete="username">':'<p class="small">El panel está cerrado: requiere conectar Supabase.</p>'}<label>Contraseña</label><input id="lp" type="password" required autocomplete="current-password"${isConfigured?"":" disabled"}><div class="err">${msg}</div><div class="actions"><button type="button" class="secondary" data-act="close">Cerrar</button><button class="seal-btn"${isConfigured?"":" disabled"}>Entrar</button></div></form>`;
+ box.innerHTML=`<h2>Acceso del administrador</h2><div class="orn">✧ ✦ ✧</div><form id="lf">${isConfigured?'':'<p class="small">Falta conectar Supabase: pega tu Project URL y tu clave anon en index.html.</p>'}<label>Correo</label><input id="le" type="email" required autocomplete="username"><label>Contraseña</label><input id="lp" type="password" required autocomplete="current-password"><div class="err">${msg}</div><div class="actions"><button type="button" class="secondary" data-act="close">Cerrar</button><button class="seal-btn">Entrar</button></div></form>`;
  box.querySelector("#lf").onsubmit=async e=>{e.preventDefault();try{await A.login(box.querySelector("#le").value,box.querySelector("#lp").value);adminPanel()}catch(x){adminLogin(escapeHtml(x.message))}}}
 async function adminPanel(){
  let d;try{d=await A.list()}catch(x){await A.logout();return adminLogin("Sesión no válida: "+escapeHtml(x.message))}
