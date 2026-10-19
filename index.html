@@ -153,7 +153,7 @@ body{background:transparent!important}
 */
 const SUPABASE_URL = "https://ofxvbjfgdhgcwilqavgc.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9meHZiamZnZGhnY3dpbHFhdmdjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI0MDg4MjIsImV4cCI6MjEwNzk4NDgyMn0.rFyDaYB7MP25VnolTrYgwyguPgrL_kGg6eWxS-7V_Cg";
-const isConfigured = SUPABASE_URL.startsWith("https://") && !SUPABASE_URL.includes("https://ofxvbjfgdhgcwilqavgc.supabase.co") && !SUPABASE_ANON_KEY.includes("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9meHZiamZnZGhnY3dpbHFhdmdjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI0MDg4MjIsImV4cCI6MjEwNzk4NDgyMn0.rFyDaYB7MP25VnolTrYgwyguPgrL_kGg6eWxS-7V_Cg");
+const isConfigured = SUPABASE_URL.startsWith("https://ofxvbjfgdhgcwilqavgc.supabase.co") && !SUPABASE_URL.includes("https://ofxvbjfgdhgcwilqavgc.supabase.co") && !SUPABASE_ANON_KEY.includes("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9meHZiamZnZGhnY3dpbHFhdmdjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI0MDg4MjIsImV4cCI6MjEwNzk4NDgyMn0.rFyDaYB7MP25VnolTrYgwyguPgrL_kGg6eWxS-7V_Cg");
 const grid = document.getElementById("giftGrid"), notice = document.getElementById("connectionNotice");
 const dialog = document.getElementById("reserveDialog"), form = document.getElementById("reserveForm");
 let selectedGift = null, gifts = [], supabaseClient = null;
