@@ -96,6 +96,23 @@ body{background:transparent!important}
 @keyframes shine{from{filter:drop-shadow(0 6px 8px rgba(40,25,5,.35)) brightness(1)}to{filter:drop-shadow(0 6px 14px rgba(230,180,80,.8)) brightness(1.1)}}
 @media(max-width:700px){.hero{grid-template-columns:1fr 1fr;grid-template-areas:"l r" "t t"}.hero .baby{grid-area:l;max-height:130px}.hero .emblem{grid-area:r;max-height:110px}.hero-text{grid-area:t}}
 @media(prefers-reduced-motion:reduce){.hero .baby,.hero .emblem{animation:none}}
+
+/* Ventana emergente de vista completa del regalo */
+.photo[data-photo]{cursor:zoom-in;position:relative}
+.photo[data-photo]:focus-visible{outline:3px solid var(--gold);outline-offset:-3px}
+dialog#giftDialog{width:min(94vw,560px);max-height:92vh;overflow:hidden}
+dialog#giftDialog[open]{display:flex;flex-direction:column;animation:giftPop .28s cubic-bezier(.2,.9,.3,1.1)}
+#giftDialog::backdrop{background:#061a3ecc;backdrop-filter:blur(3px)}
+.gift-photo{position:relative;flex:0 1 auto;display:grid;place-items:center;background:radial-gradient(circle at 50% 40%,#1d4a87,#09285b);border-bottom:2px solid var(--gold);min-height:180px;overflow:hidden}
+.gift-photo img{display:block;width:100%;height:auto;max-height:58vh;object-fit:contain}
+.gift-photo .ph{font-size:72px;color:#f2d69d;padding:50px 0}
+.gift-close{position:absolute;top:10px;right:10px;width:36px;height:36px;padding:0;border-radius:50%;background:rgba(9,40,91,.85);color:#fff8e8;border:1px solid var(--gold);font-size:18px;line-height:1;z-index:2}
+.gift-info{padding:16px 20px 18px;overflow:auto}
+.gift-info h2{font:normal 24px Georgia,serif;color:var(--navy);margin:0 0 6px}
+.gift-info p{font:14px/1.5 Arial,sans-serif;color:var(--muted);margin:0 0 12px}
+.gift-info .status{margin-bottom:14px}
+@keyframes giftPop{from{opacity:0;transform:translateY(14px) scale(.96)}to{opacity:1;transform:none}}
+@media(prefers-reduced-motion:reduce){dialog#giftDialog[open]{animation:none}}
 </style>
 </head>
 <body>
@@ -120,6 +137,15 @@ body{background:transparent!important}
 </main>
 <footer>Con cariño, para la llegada de Maximiliano · Baby Gladiator<br>La lista muestra disponibilidad, nunca los nombres de quienes reservan.</footer>
 
+<dialog id="giftDialog" aria-labelledby="giftTitle">
+ <div class="gift-photo" id="giftPhoto"></div>
+ <div class="gift-info">
+  <h2 id="giftTitle"></h2>
+  <p id="giftDesc"></p>
+  <div class="status" id="giftStatus"></div>
+  <div class="actions"><button type="button" class="secondary" id="giftCancel">Volver</button><button type="button" class="primary" id="giftChoose">Elegir</button></div>
+ </div>
+</dialog>
 <dialog id="reserveDialog" class="scroll-dialog">
  <div class="rod"></div>
  <div class="unroll"><div><form class="parchment" id="reserveForm">
@@ -175,19 +201,40 @@ document.querySelectorAll(".scroll-dialog").forEach(d=>d.addEventListener("cance
 let adminToken=null;
 const store={get(){try{return JSON.parse(localStorage.getItem("bm_demo"))}catch{return null}},set(d){try{localStorage.setItem("bm_demo",JSON.stringify(d))}catch{}}};
 function demoData(){let d=store.get();if(!d){d={gifts:demoGifts.map(g=>({...g,active:true})),res:[]};store.set(d)}return d}
+const SESSION_KEY="bm_admin_session";
+const sess={get(){try{return JSON.parse(localStorage.getItem(SESSION_KEY))}catch{return null}},set(d){try{localStorage.setItem(SESSION_KEY,JSON.stringify(d))}catch{}},clear(){try{localStorage.removeItem(SESSION_KEY)}catch{}}};
+function saveSession(d){adminToken=d.access_token;sess.set({access_token:d.access_token,refresh_token:d.refresh_token,expires_at:d.expires_at||Math.floor(Date.now()/1000)+(Number(d.expires_in)||3600)})}
 const A={
+ async ensure(){
+  if(!isConfigured)return false;
+  const s=sess.get();if(!s||!s.refresh_token){adminToken=null;return false}
+  const now=Math.floor(Date.now()/1000),restoring=!adminToken;
+  if(s.expires_at-now>60){adminToken=s.access_token}
+  else{
+   try{
+    const r=await fetch(SUPABASE_URL+"/auth/v1/token?grant_type=refresh_token",{method:"POST",headers:{apikey:SUPABASE_ANON_KEY,"Content-Type":"application/json"},body:JSON.stringify({refresh_token:s.refresh_token})});
+    const d=await r.json();
+    if(!r.ok){adminToken=null;sess.clear();return false}
+    saveSession(d);
+   }catch{return !!adminToken}
+  }
+  if(restoring){
+   let ok=false;try{ok=(await api("rpc/is_admin",{method:"POST",body:"{}"}))===true}catch{}
+   if(!ok){adminToken=null;sess.clear();return false}
+  }
+  return true},
  async login(email,pw){
   if(!isConfigured)throw new Error("El acceso de administrador requiere Supabase configurado.");
   const r=await fetch(SUPABASE_URL+"/auth/v1/token?grant_type=password",{method:"POST",headers:{apikey:SUPABASE_ANON_KEY,"Content-Type":"application/json"},body:JSON.stringify({email,password:pw})});
   const d=await r.json();if(!r.ok)throw new Error("Correo o contraseña incorrectos.");
-  adminToken=d.access_token;
+  saveSession(d);
   let ok=false;try{ok=(await api("rpc/is_admin",{method:"POST",body:"{}"}))===true}catch{}
   if(!ok){await A.logout();throw new Error("Esta cuenta no es administradora.")}},
  async logout(){
-  const t=adminToken;adminToken=null;
+  const t=adminToken;adminToken=null;sess.clear();
   if(isConfigured&&t){try{await fetch(SUPABASE_URL+"/auth/v1/logout",{method:"POST",headers:{apikey:SUPABASE_ANON_KEY,Authorization:"Bearer "+t}})}catch{}}},
  async list(){
-  if(!adminToken)throw new Error("Sesión no iniciada.");
+  if(!(await A.ensure()))throw new Error("Sesión no iniciada.");
   const gifts=await api("gifts?select=*&order=created_at.asc");
   const res=(await api("reservations?select=*,gifts(name)&order=created_at.desc")).map(r=>({...r,gift_name:r.gifts&&r.gifts.name}));
   return{gifts,res}},
@@ -201,7 +248,7 @@ function adminLogin(msg=""){
  box.innerHTML=`<h2>Acceso del administrador</h2><div class="orn">✧ ✦ ✧</div><form id="lf">${isConfigured?'':'<p class="small">Falta conectar Supabase: pega tu Project URL y tu clave anon en index.html.</p>'}<label>Correo</label><input id="le" type="email" required autocomplete="username"><label>Contraseña</label><input id="lp" type="password" required autocomplete="current-password"><div class="err">${msg}</div><div class="actions"><button type="button" class="secondary" data-act="close">Cerrar</button><button class="seal-btn">Entrar</button></div></form>`;
  box.querySelector("#lf").onsubmit=async e=>{e.preventDefault();try{await A.login(box.querySelector("#le").value,box.querySelector("#lp").value);adminPanel()}catch(x){adminLogin(escapeHtml(x.message))}}}
 async function adminPanel(){
- let d;try{d=await A.list()}catch(x){await A.logout();return adminLogin("Sesión no válida: "+escapeHtml(x.message))}
+ let d;try{d=await A.list()}catch(x){if(/jwt|token|expired|sesi|permission|auth/i.test(x.message))await A.logout();return adminLogin("No se pudo cargar el panel: "+escapeHtml(x.message))}
  const cnt=id=>d.res.filter(r=>r.gift_id===id).length;
  const g=d.gifts.map(x=>`<div class="row"><b>${escapeHtml(x.name)}${x.active?"":" (oculto)"}<br><small>${cnt(x.id)} reservado(s) de ${x.quantity}</small></b><input type="number" min="1" value="${x.quantity}" data-qty="${x.id}" aria-label="Cantidad"><button class="secondary" data-act="tog" data-id="${x.id}" data-v="${x.active}">${x.active?"Ocultar":"Mostrar"}</button><button class="secondary" data-act="del" data-id="${x.id}">Eliminar</button></div>`).join("")||"<p class='small'>Aún no hay regalos.</p>";
  const r=d.res.map(x=>`<div class="row"><b>${escapeHtml(x.guest_name)}<br><small>${escapeHtml(x.gift_name||"")} · ${escapeHtml(x.guest_phone||"sin teléfono")}${x.guest_message?"<br>“"+escapeHtml(x.guest_message)+"”":""}</small></b><button class="secondary" data-act="cres" data-id="${x.id}">Liberar</button></div>`).join("")||"<p class='small'>Todavía no hay reservas.</p>";
@@ -221,8 +268,8 @@ box.addEventListener("click",async e=>{const b=e.target.closest("[data-act]");if
  if(a=="del"){if(!confirm("¿Eliminar este regalo y sus reservas?"))return;await A.del(id)}
  if(a=="cres"){if(!confirm("¿Liberar esta reserva?"))return;await A.delRes(id)}
  adminPanel();loadGifts()}catch(x){toast(x.message)}});
-document.getElementById("adminBtn").addEventListener("click",()=>{SC.open(adm);adminToken?adminPanel():adminLogin()});
-adm.addEventListener("close",()=>{A.logout();box.innerHTML=""});
+document.getElementById("adminBtn").addEventListener("click",()=>{SC.open(adm);A.ensure().then(ok=>ok?adminPanel():adminLogin())});
+adm.addEventListener("close",()=>{box.innerHTML=""});
 function escapeHtml(v=""){return String(v).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
 function toast(msg){const el=document.getElementById("toast");el.textContent=msg;el.style.display="block";setTimeout(()=>el.style.display="none",3200);}
 async function uploadGiftImage(file){
@@ -258,10 +305,27 @@ function render(error=false){
  grid.innerHTML=gifts.map(g=>{
   const available=Math.max(0,Number(g.quantity||1)-Number(g.reserved_count||0)), reserved=available===0;
   const image=g.image_url?`<img src="${escapeHtml(g.image_url)}" alt="${escapeHtml(g.name)}" loading="lazy">`:"<span aria-hidden=\"true\">✧</span>";
-  return `<article class="card"><div class="photo">${image}</div><div class="card-body"><h2>${escapeHtml(g.name)}</h2><p>${escapeHtml(g.description||"Un detalle elegido con cariño para Maximiliano.")}</p><div class="status ${reserved?"reserved":""}">${reserved?"Reservado":"Disponible"}</div><div class="card-foot"><span class="qty">${available} disponible(s)</span><button class="${reserved?"secondary":"primary"}" ${reserved?"disabled":""} data-id="${escapeHtml(g.id)}">${reserved?"Ya elegido":"Elegir regalo"}</button></div></div></article>`;
+  return `<article class="card"><div class="photo" data-photo="${escapeHtml(g.id)}" role="button" tabindex="0" aria-label="Ver foto completa de ${escapeHtml(g.name)}">${image}</div><div class="card-body"><h2>${escapeHtml(g.name)}</h2><p>${escapeHtml(g.description||"Un detalle elegido con cariño para Maximiliano.")}</p><div class="status ${reserved?"reserved":""}">${reserved?"Reservado":"Disponible"}</div><div class="card-foot"><span class="qty">${available} disponible(s)</span><button class="${reserved?"secondary":"primary"}" ${reserved?"disabled":""} data-id="${escapeHtml(g.id)}">${reserved?"Ya elegido":"Elegir regalo"}</button></div></div></article>`;
  }).join("");
- grid.querySelectorAll("button[data-id]").forEach(b=>b.addEventListener("click",()=>openReserve(b.dataset.id)));
+ grid.querySelectorAll("button[data-id]").forEach(b=>b.addEventListener("click",()=>openPreview(b.dataset.id)));
+ grid.querySelectorAll("[data-photo]").forEach(p=>{p.addEventListener("click",()=>openPreview(p.dataset.photo));p.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();openPreview(p.dataset.photo)}})});
 }
+const giftDialog=document.getElementById("giftDialog");
+function openPreview(id){
+ const g=gifts.find(x=>String(x.id)===String(id));if(!g)return;
+ selectedGift=g;
+ const available=Math.max(0,Number(g.quantity||1)-Number(g.reserved_count||0)),reserved=available===0;
+ document.getElementById("giftPhoto").innerHTML=(g.image_url?`<img src="${escapeHtml(g.image_url)}" alt="${escapeHtml(g.name)}">`:'<span class="ph" aria-hidden="true">✧</span>')+'<button type="button" class="gift-close" id="giftX" aria-label="Cerrar">✕</button>';
+ document.getElementById("giftX").onclick=()=>giftDialog.close();
+ document.getElementById("giftTitle").textContent=g.name;
+ document.getElementById("giftDesc").textContent=g.description||"Un detalle elegido con cariño para Maximiliano.";
+ const st=document.getElementById("giftStatus");st.className="status"+(reserved?" reserved":"");st.textContent=reserved?"Reservado":`Disponible · ${available} disponible(s)`;
+ const ch=document.getElementById("giftChoose");ch.disabled=reserved;ch.textContent=reserved?"Ya elegido":"Elegir";
+ giftDialog.showModal();
+}
+document.getElementById("giftCancel").addEventListener("click",()=>giftDialog.close());
+document.getElementById("giftChoose").addEventListener("click",()=>{const g=selectedGift;giftDialog.close();if(g)openReserve(g.id)});
+giftDialog.addEventListener("click",e=>{if(e.target===giftDialog)giftDialog.close()});
 function openReserve(id){
  selectedGift=gifts.find(g=>String(g.id)===String(id)); if(!selectedGift)return;
  document.getElementById("modalTitle").textContent="Reservar: "+selectedGift.name;
