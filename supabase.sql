@@ -131,3 +131,27 @@ where not exists (select 1 from public.gifts);
 insert into public.admins(user_id)
 select id from auth.users where email = 'valentinacorrea.981223@gmail.com'
 on conflict do nothing;
+
+
+-- Almacenamiento de imágenes de regalos (máximo recomendado desde la web: 5 MB).
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('gift-images', 'gift-images', true, 5242880, array['image/jpeg','image/png','image/webp','image/gif'])
+on conflict (id) do update set public = true, file_size_limit = 5242880,
+  allowed_mime_types = array['image/jpeg','image/png','image/webp','image/gif'];
+
+drop policy if exists "Public can view gift images" on storage.objects;
+create policy "Public can view gift images" on storage.objects
+for select to anon, authenticated using (bucket_id = 'gift-images');
+
+drop policy if exists "Admins upload gift images" on storage.objects;
+create policy "Admins upload gift images" on storage.objects
+for insert to authenticated with check (bucket_id = 'gift-images' and public.is_admin());
+
+drop policy if exists "Admins update gift images" on storage.objects;
+create policy "Admins update gift images" on storage.objects
+for update to authenticated using (bucket_id = 'gift-images' and public.is_admin())
+with check (bucket_id = 'gift-images' and public.is_admin());
+
+drop policy if exists "Admins delete gift images" on storage.objects;
+create policy "Admins delete gift images" on storage.objects
+for delete to authenticated using (bucket_id = 'gift-images' and public.is_admin());

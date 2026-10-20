@@ -31,3 +31,6 @@ La página HTML incluida contiene una vista de demostración. No guarda reservas
 ## Nota
 Este paquete es una base de diseño y configuración, no una publicación en línea. Para obtener un enlace público real se necesita desplegarlo en una cuenta de hosting y conectar la base de datos.
 \n\nSeguridad: `config.js` se descarga al navegador y no oculta la clave pública anon/publishable. Nunca pongas una clave `service_role` o `secret` en archivos del frontend. La seguridad depende de RLS, políticas y funciones RPC correctas.\n
+
+## Imágenes de regalos
+El panel permite seleccionar una imagen desde el computador (PNG, JPG, WEBP o GIF, hasta 5 MB) y ver una vista previa. La imagen se sube a Supabase Storage en el bucket público `gift-images`; la lista guarda automáticamente su URL. Después de actualizar los archivos, ejecuta en Supabase el bloque de almacenamiento añadido al final de `supabase.sql` (puedes ejecutar el archivo completo). Solo los administradores autorizados pueden subir, modificar o eliminar archivos; el público solo puede ver las imágenes.
