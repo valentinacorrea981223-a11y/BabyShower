@@ -142,18 +142,22 @@ body{background:transparent!important}
  <div class="rod"></div>
 </dialog>
 <div id="toast" role="status"></div>
+<script src="config.js"></script>
 <script>
 /*
   CONFIGURACIÓN:
   1. Ejecuta supabase.sql en el SQL Editor de tu proyecto Supabase.
-  2. Reemplaza SUPABASE_URL y SUPABASE_ANON_KEY por los datos de tu proyecto.
+  2. Edita config.js con la URL y la clave pública anon/publishable de tu proyecto.
   3. La página usa las funciones seguras RPC public_gift_list y reserve_gift; los nombres no se exponen públicamente.
   4. El panel de administrador solo abre con un usuario de Supabase Auth que esté en la tabla admins (sin PIN ni modo demo).
   Sin configuración, la página funciona en modo demostración local; las reservas no se comparten entre dispositivos.
 */
-const SUPABASE_URL = "https://ofxvbjfgdhgcwilqavgc.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9meHZiamZnZGhnY3dpbHFhdmdjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI0MDg4MjIsImV4cCI6MjEwNzk4NDgyMn0.rFyDaYB7MP25VnolTrYgwyguPgrL_kGg6eWxS-7V_Cg";
-const isConfigured = SUPABASE_URL.startsWith("https://ofxvbjfgdhgcwilqavgc.supabase.co") && !SUPABASE_URL.includes("https://ofxvbjfgdhgcwilqavgc.supabase.co") && !SUPABASE_ANON_KEY.includes("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9meHZiamZnZGhnY3dpbHFhdmdjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI0MDg4MjIsImV4cCI6MjEwNzk4NDgyMn0.rFyDaYB7MP25VnolTrYgwyguPgrL_kGg6eWxS-7V_Cg");
+const SUPABASE_URL = window.SUPABASE_CONFIG?.url || "";
+const SUPABASE_ANON_KEY = window.SUPABASE_CONFIG?.anonKey || "";
+const isConfigured = /^https:\/\/.+\.supabase\.co$/.test(SUPABASE_URL)
+  && SUPABASE_ANON_KEY.length > 20
+  && !SUPABASE_URL.includes("PEGA_AQUI")
+  && !SUPABASE_ANON_KEY.includes("PEGA_AQUI");
 const grid = document.getElementById("giftGrid"), notice = document.getElementById("connectionNotice");
 const dialog = document.getElementById("reserveDialog"), form = document.getElementById("reserveForm");
 let selectedGift = null, gifts = [], supabaseClient = null;

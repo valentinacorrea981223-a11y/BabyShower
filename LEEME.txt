@@ -1,7 +1,7 @@
 # Lista de regalos · Baby Maximiliano
 
 ## Archivos
-- `index.html`: página pública adaptable a móvil y escritorio.
+- `index.html`: página pública adaptable a móvil y escritorio.\n- `config.js`: configuración separada de Supabase (URL y clave pública).
 - `coliseo.jpg`: imagen de fondo (debe ir en la misma carpeta que index.html).
 - `bebe.png` y `escudo.png`: imágenes del encabezado (misma carpeta que index.html).
 - `supabase.sql`: estructura de base de datos y funciones seguras para disponibilidad/reservas.
@@ -13,7 +13,7 @@ La página HTML incluida contiene una vista de demostración. No guarda reservas
 1. Crea un proyecto en Supabase.
 2. Abre **SQL Editor**, pega `supabase.sql` y ejecuta el script.
 3. En **Project Settings > API**, copia Project URL y la clave pública `anon`/publishable.
-4. En `index.html`, reemplaza:
+4. En `config.js`, reemplaza:
    - `PEGA_AQUI_TU_SUPABASE_URL`
    - `PEGA_AQUI_TU_SUPABASE_ANON_KEY`
 5. El JavaScript ya usa `rpc/public_gift_list` y `rpc/reserve_gift`. No uses políticas públicas de lectura de la tabla `reservations`.
@@ -30,3 +30,4 @@ La página HTML incluida contiene una vista de demostración. No guarda reservas
 
 ## Nota
 Este paquete es una base de diseño y configuración, no una publicación en línea. Para obtener un enlace público real se necesita desplegarlo en una cuenta de hosting y conectar la base de datos.
+\n\nSeguridad: `config.js` se descarga al navegador y no oculta la clave pública anon/publishable. Nunca pongas una clave `service_role` o `secret` en archivos del frontend. La seguridad depende de RLS, políticas y funciones RPC correctas.\n
