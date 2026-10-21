@@ -113,6 +113,42 @@ dialog#giftDialog[open]{display:flex;flex-direction:column;animation:giftPop .28
 .gift-info .status{margin-bottom:14px}
 @keyframes giftPop{from{opacity:0;transform:translateY(14px) scale(.96)}to{opacity:1;transform:none}}
 @media(prefers-reduced-motion:reduce){dialog#giftDialog[open]{animation:none}}
+
+/* Panel de administrador en pantalla completa */
+dialog#adminDialog.scroll-dialog{width:100vw;max-width:100vw;height:100vh;height:100dvh;max-height:none;margin:0;inset:0;overflow:hidden}
+#adminDialog[open]{display:flex;flex-direction:column}
+#adminDialog .rod{margin:0 10px;flex:none}
+#adminDialog .unroll{display:block;height:0;margin:-2px 0;transition:height .8s cubic-bezier(.3,.8,.3,1)}
+#adminDialog.open .unroll{height:calc(100vh - 40px);height:calc(100dvh - 40px)}
+#adminDialog .unroll>div{height:100%}
+#adminBox{--pad:clamp(14px,3vw,48px);height:100%;max-height:none;overflow:auto;padding:0 var(--pad) 32px}
+.adm-bar{position:sticky;top:0;z-index:5;display:flex;align-items:center;justify-content:space-between;gap:10px 18px;flex-wrap:wrap;margin:0 calc(-1*var(--pad));padding:14px var(--pad) 12px;background:linear-gradient(#f3e3bd,#efdcae);border-bottom:2px solid rgba(138,99,48,.55);box-shadow:0 6px 14px rgba(110,70,20,.18)}
+.adm-bar h2{margin:0;text-align:left;font-size:clamp(20px,2.4vw,28px)}
+.adm-bar .adm-tabs{margin:0}
+.adm-end{display:flex;gap:8px;flex-wrap:wrap}
+.adm-wrap{max-width:1400px;margin:0 auto;padding-top:20px}
+.adm-split{display:grid;grid-template-columns:minmax(300px,380px) minmax(0,1fr);gap:28px;align-items:start}
+.adm-form{background:rgba(255,250,235,.5);border:1px solid rgba(138,99,48,.45);border-radius:10px;padding:16px 18px 6px}
+.adm-form>label:first-child{font-size:16px}
+.adm-h{font:normal 20px Georgia,serif;color:#2b2f5a;margin:0 0 12px}
+.adm-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,340px),1fr));gap:12px}
+.acard{display:grid;grid-template-columns:76px minmax(0,1fr);gap:10px 12px;padding:12px;background:rgba(255,250,235,.55);border:1px solid rgba(138,99,48,.4);border-radius:10px;font:14px Georgia,serif}
+.acard.off{opacity:.6}
+.athumb{width:76px;height:76px;border-radius:8px;overflow:hidden;display:grid;place-items:center;background:linear-gradient(135deg,#244f88,#c69a50);color:#fff0c9;font-size:28px}
+.athumb img{width:100%;height:100%;object-fit:cover;display:block}
+.ainfo{display:flex;flex-direction:column;gap:3px;min-width:0}
+.ainfo.wide{grid-column:1/-1}
+.ainfo b{font-size:16px;color:#2b2f5a;overflow-wrap:anywhere}
+.adesc{color:#5a3d1c;overflow-wrap:anywhere}
+.amsg{font-style:italic;color:#1f2a55;overflow-wrap:anywhere}
+.ainfo small{color:#6a5230}
+.out{color:#9b2c20;font-style:normal;font-weight:700}
+.actl{grid-column:1/-1;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.actl button{padding:6px 12px;font-size:12px}
+.qtylbl{display:flex;align-items:center;gap:6px;margin:0 auto 0 0}
+.qtylbl input{width:64px;margin:0;padding:6px;font-size:15px}
+.adm-login{max-width:420px;margin:8vh auto 0}
+@media(max-width:860px){.adm-split{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -245,16 +281,16 @@ const A={
 };
 const box=document.getElementById("adminBox"),adm=document.getElementById("adminDialog");let tab="gifts";
 function adminLogin(msg=""){
- box.innerHTML=`<h2>Acceso del administrador</h2><div class="orn">✧ ✦ ✧</div><form id="lf">${isConfigured?'':'<p class="small">Falta conectar Supabase: pega tu Project URL y tu clave anon en index.html.</p>'}<label>Correo</label><input id="le" type="email" required autocomplete="username"><label>Contraseña</label><input id="lp" type="password" required autocomplete="current-password"><div class="err">${msg}</div><div class="actions"><button type="button" class="secondary" data-act="close">Cerrar</button><button class="seal-btn">Entrar</button></div></form>`;
+ box.innerHTML=`<div class="adm-login"><h2>Acceso del administrador</h2><div class="orn">✧ ✦ ✧</div><form id="lf">${isConfigured?'':'<p class="small">Falta conectar Supabase: pega tu Project URL y tu clave anon en index.html.</p>'}<label>Correo</label><input id="le" type="email" required autocomplete="username"><label>Contraseña</label><input id="lp" type="password" required autocomplete="current-password"><div class="err">${msg}</div><div class="actions"><button type="button" class="secondary" data-act="close">Cerrar</button><button class="seal-btn">Entrar</button></div></form></div>`;
  box.querySelector("#lf").onsubmit=async e=>{e.preventDefault();try{await A.login(box.querySelector("#le").value,box.querySelector("#lp").value);adminPanel()}catch(x){adminLogin(escapeHtml(x.message))}}}
 async function adminPanel(){
  let d;try{d=await A.list()}catch(x){if(/jwt|token|expired|sesi|permission|auth/i.test(x.message))await A.logout();return adminLogin("No se pudo cargar el panel: "+escapeHtml(x.message))}
  const cnt=id=>d.res.filter(r=>r.gift_id===id).length;
- const g=d.gifts.map(x=>`<div class="row"><b>${escapeHtml(x.name)}${x.active?"":" (oculto)"}<br><small>${cnt(x.id)} reservado(s) de ${x.quantity}</small></b><input type="number" min="1" value="${x.quantity}" data-qty="${x.id}" aria-label="Cantidad"><button class="secondary" data-act="tog" data-id="${x.id}" data-v="${x.active}">${x.active?"Ocultar":"Mostrar"}</button><button class="secondary" data-act="del" data-id="${x.id}">Eliminar</button></div>`).join("")||"<p class='small'>Aún no hay regalos.</p>";
- const r=d.res.map(x=>`<div class="row"><b>${escapeHtml(x.guest_name)}<br><small>${escapeHtml(x.gift_name||"")} · ${escapeHtml(x.guest_phone||"sin teléfono")}${x.guest_message?"<br>“"+escapeHtml(x.guest_message)+"”":""}</small></b><button class="secondary" data-act="cres" data-id="${x.id}">Liberar</button></div>`).join("")||"<p class='small'>Todavía no hay reservas.</p>";
- box.innerHTML=`<h2>Panel del administrador</h2><div class="adm-tabs"><button class="secondary ${tab=="gifts"?"on":""}" data-act="tab" data-id="gifts">Regalos</button><button class="secondary ${tab=="res"?"on":""}" data-act="tab" data-id="res">Reservas (${d.res.length})</button></div>`+
- (tab=="gifts"?`<form id="af"><label>Nuevo regalo</label><input id="an" required maxlength="120" placeholder="Nombre del regalo"><input id="ad" maxlength="200" placeholder="Descripción (opcional)"><label for="ai">Foto del regalo (opcional)</label><input id="ai" type="file" accept="image/png,image/jpeg,image/webp,image/gif"><div id="imagePreview" class="small">Elige una imagen desde tu dispositivo (máx. 5 MB).</div><label>Cantidad disponible</label><input id="aq" type="number" min="1" value="1" required><div class="actions"><button class="seal-btn">Añadir regalo</button></div></form>${g}`:r)+
- `<div class="actions" style="margin-top:12px"><button class="secondary" data-act="out">Cerrar sesión</button><button class="secondary" data-act="close">Cerrar</button></div>`;
+ const fdate=v=>{try{return new Date(v).toLocaleString("es-CO",{dateStyle:"medium",timeStyle:"short"})}catch{return""}};
+ const g=d.gifts.map(x=>{const c=cnt(x.id),out=c>=x.quantity;return `<div class="acard${x.active?"":" off"}"><div class="athumb">${x.image_url?`<img src="${escapeHtml(x.image_url)}" alt="" loading="lazy">`:"<span>✧</span>"}</div><div class="ainfo"><b>${escapeHtml(x.name)}${x.active?"":" (oculto)"}</b>${x.description?`<span class="adesc">${escapeHtml(x.description)}</span>`:""}<small>${c} reservado(s) de ${x.quantity}${out?' · <em class="out">agotado</em>':""}</small></div><div class="actl"><label class="qtylbl">Cantidad <input type="number" min="1" value="${x.quantity}" data-qty="${x.id}" aria-label="Cantidad"></label><button class="secondary" data-act="tog" data-id="${x.id}" data-v="${x.active}">${x.active?"Ocultar":"Mostrar"}</button><button class="secondary" data-act="del" data-id="${x.id}">Eliminar</button></div></div>`}).join("")||"<p class='small'>Aún no hay regalos.</p>";
+ const r=d.res.map(x=>`<div class="acard rcard"><div class="ainfo wide"><b>${escapeHtml(x.guest_name)}</b><span class="adesc">Regalo: ${escapeHtml(x.gift_name||"—")}</span><span class="adesc">Contacto: ${escapeHtml(x.guest_phone||"sin teléfono")}</span>${x.guest_message?`<span class="amsg">“${escapeHtml(x.guest_message)}”</span>`:""}<small>${escapeHtml(fdate(x.created_at))}</small></div><div class="actl"><button class="secondary" data-act="cres" data-id="${x.id}">Liberar</button></div></div>`).join("")||"<p class='small'>Todavía no hay reservas.</p>";
+ box.innerHTML=`<div class="adm-bar"><h2>Panel del administrador</h2><div class="adm-tabs"><button class="secondary ${tab=="gifts"?"on":""}" data-act="tab" data-id="gifts">Regalos (${d.gifts.length})</button><button class="secondary ${tab=="res"?"on":""}" data-act="tab" data-id="res">Reservas (${d.res.length})</button></div><div class="adm-end"><button class="secondary" data-act="out">Cerrar sesión</button><button class="primary" data-act="close">Cerrar</button></div></div><div class="adm-wrap">`+
+ (tab=="gifts"?`<div class="adm-split"><form id="af" class="adm-form"><label>Nuevo regalo</label><input id="an" required maxlength="120" placeholder="Nombre del regalo"><input id="ad" maxlength="200" placeholder="Descripción (opcional)"><label for="ai">Foto del regalo (opcional)</label><input id="ai" type="file" accept="image/png,image/jpeg,image/webp,image/gif"><div id="imagePreview" class="small" style="margin-bottom:12px">Elige una imagen desde tu dispositivo (máx. 5 MB).</div><label>Cantidad disponible</label><input id="aq" type="number" min="1" value="1" required><div class="actions" style="margin-bottom:12px"><button class="seal-btn">Añadir regalo</button></div></form><div><h3 class="adm-h">Regalos (${d.gifts.length})</h3><div class="adm-list">${g}</div></div></div>`:`<h3 class="adm-h">Reservas (${d.res.length})</h3><div class="adm-list">${r}</div>`)+`</div>`;
  const af=box.querySelector("#af");if(af){
  const imageInput=af.querySelector("#ai"), preview=af.querySelector("#imagePreview");
  imageInput.onchange=()=>{const file=imageInput.files[0];if(!file){preview.textContent="Elige una imagen desde tu dispositivo (máx. 5 MB).";return;}if(!file.type.startsWith("image/")){imageInput.value="";preview.textContent="Selecciona un archivo de imagen.";return;}if(file.size>5*1024*1024){imageInput.value="";preview.textContent="La imagen supera los 5 MB.";toast("La imagen debe pesar menos de 5 MB.");return;}const url=URL.createObjectURL(file);preview.innerHTML=`<img src="${url}" alt="Vista previa" style="display:block;max-width:100%;max-height:150px;margin-top:8px;border-radius:8px"><span>Vista previa: ${escapeHtml(file.name)}</span>`;};
@@ -285,15 +321,23 @@ async function api(path, options={}) {
  if(!r.ok) throw new Error(data?.message||"No se pudo conectar con la base de datos.");
  return data;
 }
-async function loadGifts(){
+let shuffleKeys={};
+// Los regalos agotados van al final; el resto se mezcla al azar en cada carga o actualización.
+function orderGifts(list,reshuffle){
+ if(reshuffle)shuffleKeys={};
+ list.forEach(g=>{if(!(g.id in shuffleKeys))shuffleKeys[g.id]=Math.random()});
+ const soldOut=g=>Number(g.quantity||1)-Number(g.reserved_count||0)<=0?1:0;
+ return list.sort((a,b)=>soldOut(a)-soldOut(b)||shuffleKeys[a.id]-shuffleKeys[b.id]);
+}
+async function loadGifts(reshuffle=false){
  notice.textContent="Actualizando disponibilidad…";
  try{
   if(isConfigured){
    const rows=await api("rpc/public_gift_list",{method:"POST",body:"{}"});
-   gifts=rows.map(g=>({...g,reserved_count:Number(g.reserved_count||0)}));
+   gifts=orderGifts(rows.map(g=>({...g,reserved_count:Number(g.reserved_count||0)})),reshuffle);
    notice.textContent="Lista conectada y actualizada. Los nombres de los invitados no se muestran.";
   }else{
-   {const dd=demoData();gifts=dd.gifts.filter(g=>g.active).map(g=>({...g,reserved_count:dd.res.filter(r=>r.gift_id===g.id).length}))}
+   {const dd=demoData();gifts=orderGifts(dd.gifts.filter(g=>g.active).map(g=>({...g,reserved_count:dd.res.filter(r=>r.gift_id===g.id).length})),reshuffle)}
    notice.textContent="Vista de demostración: para compartir reservas reales entre dispositivos, conecta tu proyecto Supabase siguiendo el archivo LEEME.";
   }
   render();
@@ -351,13 +395,13 @@ form.addEventListener("submit",async e=>{
  }catch(err){toast(err.message||"No se pudo completar la reserva.");await loadGifts();}
  finally{btn.disabled=false;btn.textContent="Sellar reserva";}
 });
-document.getElementById("refreshBtn").addEventListener("click",loadGifts);
+document.getElementById("refreshBtn").addEventListener("click",()=>loadGifts(true));
 document.getElementById("shareBtn").addEventListener("click",async()=>{
  const shareData={title:"Lista de regalos · Baby Maximiliano",text:"Escoge un regalo para el Baby Shower de Maximiliano.",url:location.href};
  try{if(navigator.share)await navigator.share(shareData);else{await navigator.clipboard.writeText(location.href);toast("Enlace copiado para compartir.");}}catch(e){if(e.name!=="AbortError")toast("Copia el enlace de la barra del navegador para compartirlo.");}
 });
 if(isConfigured){
- const script=document.createElement("script");script.src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2";script.onload=()=>{supabaseClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);loadGifts();};script.onerror=()=>loadGifts();document.head.appendChild(script);
-}else loadGifts();
+ const script=document.createElement("script");script.src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2";script.onload=()=>{supabaseClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);loadGifts(true);};script.onerror=()=>loadGifts(true);document.head.appendChild(script);
+}else loadGifts(true);
 </script>
 </body></html>
